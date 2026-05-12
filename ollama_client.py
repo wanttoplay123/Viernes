@@ -6,6 +6,7 @@ import urllib.error
 import urllib.request
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
+DEFAULT_MODEL = "llama3.2:1b"
 _WARMED_UP = False
 
 
@@ -45,7 +46,7 @@ def generate_ollama(
     return text.strip()
 
 
-def warmup_model(model: str = "llama3.2:3b", timeout: int = 120) -> float:
+def warmup_model(model: str = DEFAULT_MODEL, timeout: int = 120) -> float:
     global _WARMED_UP
     if _WARMED_UP:
         return 0.0

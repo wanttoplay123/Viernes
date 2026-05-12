@@ -11,7 +11,7 @@ from typing import Optional
 
 from os_controller import OSController
 from permissions import load_permissions
-from ollama_client import generate_ollama
+from ollama_client import DEFAULT_MODEL, generate_ollama
 
 LOGGER = logging.getLogger("viernes.interactive")
 
@@ -217,49 +217,9 @@ def execute_parsed(cmd: dict) -> str:
             "Usuario pregunta que recuerdas."
         )
         try:
-            return generate_ollama(model="llama3.2:3b", prompt=prompt, timeout_seconds=30)
+            return generate_ollama(model=DEFAULT_MODEL, prompt=prompt, timeout_seconds=30)
         except Exception as e:
-            return get_recent_activity()
-
-    if cmd["type"] == "type_text":
-        try:
-            _controller.execute_action("type_text", {"text": cmd["text"]})
-            return f"Escribiendo: {cmd['text']}"
-        except Exception as e:
-            return f"Error escribiendo: {e}"
-
-    if cmd["type"] == "screenshot":
-        try:
-            _controller.execute_action("screenshot", {"path": cmd["path"]})
-            return f"Captura guardada en {cmd['path']}"
-        except Exception as e:
-            return f"Error en captura: {e}"
-
-    return "No entendi el comando."
-
-
-def process_command(user_input: str) -> str:
-    if not user_input or not user_input.strip():
-        return "Di algo!"
-
-    cmd = parse_command(user_input)
-    if cmd:
-        if cmd["type"] == "exit":
-            return "__EXIT__"
-        return execute_parsed(cmd)
-
-    prompt = (
-        "Eres Viernes, asistente local. La consulta NO coincide con comandos rapidos.\n"
-        "Responde en UNA linea, breve.\n"
-        f"Usuario: {user_input}\n\n"
-        "Si quiere ejecutar una accion, responde SOLO con:\n"
-        "ACCION: <abrir|buscar|escribir> <detalle>\n"
-        "Si no, responde normal."
-    )
-    try:
-        return generate_ollama(model="llama3.2:3b", prompt=prompt, timeout_seconds=30)
-    except Exception as e:
-        return f"Error con la IA: {e}. Intenta con 'abrir notepad' o 'que haces'."
+            return f"Error con la IA: {e}. Intenta con 'abrir notepad' o 'que haces'."
 
 
 def setup_systray():
@@ -373,7 +333,7 @@ def main():
         def warmup_bg():
             try:
                 from ollama_client import warmup_model
-                warmup_model("llama3.2:3b")
+                warmup_model(DEFAULT_MODEL)
             except Exception:
                 pass
         t = threading.Thread(target=warmup_bg, daemon=True)
