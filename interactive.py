@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 import threading
 import time
 from pathlib import Path
 from typing import Optional
 
 from action_bridge import plan_action_from_text
-from model_cache import get_embedding_function
 from ollama_client import generate_ollama
 from os_controller import OSController
 from permissions import load_permissions
-from semantic_query import search_sessions
 import pystray
 from PIL import Image
 
@@ -181,7 +180,7 @@ def process_command(user_input: str) -> str:
         "Si es pregunta, responde normalmente."
     )
 
-    response = generate_ollama(model="llama3.2:3b", prompt=prompt, timeout_seconds=30)
+    response = generate_ollama(model="llama3.2:3b", prompt=prompt, timeout_seconds=60)
 
     if response.startswith("{"):
         import json
