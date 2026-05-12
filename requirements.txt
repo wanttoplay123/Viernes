@@ -2,4 +2,8 @@ pynput
 pygetwindow
 watchdog
 pyperclip
-
+chromadb
+sentence-transformers
+pyautogui
+playwright
+plyer

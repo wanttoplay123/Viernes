@@ -1,0 +1,22 @@
+{
+  "allowed_apps": [
+    "notepad",
+    "code",
+    "msedge",
+    "chrome",
+    "explorer"
+  ],
+  "allowed_directories": [
+    "C:\\Users\\USUARIO\\AppData\\Local\\Programs\\Microsoft VS Code\\viernes-ai",
+    "C:\\Users\\USUARIO\\Documents",
+    "C:\\Users\\USUARIO\\Downloads"
+  ],
+  "allowed_email_recipients": [],
+  "allowed_browser_domains": [
+    "localhost",
+    "127.0.0.1",
+    "github.com",
+    "google.com"
+  ]
+}
+
