@@ -7,3 +7,11 @@ sentence-transformers
 pyautogui
 playwright
 plyer
+
+openai-whisper
+PyQt6
+keyboard
+pyttsx3
+pystray
+Pillow
+pyaudio
