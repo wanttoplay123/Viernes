@@ -264,6 +264,7 @@ def process_command(user_input: str) -> str:
 
 def setup_systray():
     global _icon
+    import pystray
     from PIL import Image, ImageDraw
 
     img = Image.new("RGB", (64, 64), color=(79, 142, 247))
@@ -330,6 +331,7 @@ def main():
     parser.add_argument("--voice", action="store_true", help="Modo voz")
     parser.add_argument("--test", action="store_true", help="Test rapido")
     parser.add_argument("--systray", action="store_true", help="Solo systray")
+    parser.add_argument("--no-warmup", action="store_true", help="Saltar warmup de IA")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
@@ -366,16 +368,28 @@ def main():
         return
 
     setup_systray()
+
+    if not args.no_warmup:
+        def warmup_bg():
+            try:
+                from ollama_client import warmup_model
+                warmup_model("llama3.2:3b")
+            except Exception:
+                pass
+        t = threading.Thread(target=warmup_bg, daemon=True)
+        t.start()
+
     print("\n" + "="*50)
     print("  VIERNES AI - Listo")
-    print("  Comandos rapidos sin IA (instantaneo):")
-    print("    abrir notepad / whatsapp / facebook")
+    print("  Comandos instantaneos (sin IA):")
+    print("    abrir notepad / whatsapp / facebook / youtube")
     print("    busca python")
-    print("    que haces")
-    print("    escribe hola mundo")
-    print("    screenshot")
-    print("  Comandos con IA (tarda ~10-30s):")
+    print("    que haces / que recuerdas")
+    print("    escribe hola mundo / screenshot")
+    print("    voz (activa microfono - 3seg)")
+    print("  IA (responde en ~5seg - normal en CPU):")
     print("    cualquier otra cosa")
+    print("  Menu en la bandeja del sistema (icono azul)")
     print("="*50 + "\n")
 
     while True:

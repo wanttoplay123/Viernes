@@ -1,19 +1,30 @@
 from __future__ import annotations
 
 import json
+import time
 import urllib.error
 import urllib.request
 
+OLLAMA_URL = "http://localhost:11434/api/generate"
+_WARMED_UP = False
 
-def generate_ollama(model: str, prompt: str, timeout_seconds: int = 90) -> str:
+
+def generate_ollama(
+    model: str,
+    prompt: str,
+    timeout_seconds: int = 90,
+    keep_alive: str = "30m"
+) -> str:
     payload = {
         "model": model,
         "prompt": prompt,
         "stream": False,
+        "keep_alive": keep_alive,
     }
+    data_bytes = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
-        url="http://localhost:11434/api/generate",
-        data=json.dumps(payload).encode("utf-8"),
+        url=OLLAMA_URL,
+        data=data_bytes,
         headers={"Content-Type": "application/json"},
         method="POST",
     )
@@ -33,3 +44,49 @@ def generate_ollama(model: str, prompt: str, timeout_seconds: int = 90) -> str:
         raise RuntimeError("Ollama no devolvio texto util.")
     return text.strip()
 
+
+def warmup_model(model: str = "llama3.2:3b", timeout: int = 120) -> float:
+    global _WARMED_UP
+    if _WARMED_UP:
+        return 0.0
+
+    start = time.time()
+    try:
+        payload = {
+            "model": model,
+            "prompt": "responde solo: ok",
+            "stream": False,
+            "keep_alive": "60m",
+        }
+        data_bytes = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            url=OLLAMA_URL,
+            data=data_bytes,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            json.loads(response.read().decode("utf-8"))
+
+        elapsed = time.time() - start
+        _WARMED_UP = True
+        return elapsed
+
+    except Exception as exc:
+        raise RuntimeError(
+            f"No se pudo cargar el modelo {model} en Ollama: {exc}"
+        ) from exc
+
+
+def is_running() -> bool:
+    try:
+        request = urllib.request.Request(
+            url=OLLAMA_URL,
+            data=b'{}',
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=3):
+            return True
+    except Exception:
+        return False
