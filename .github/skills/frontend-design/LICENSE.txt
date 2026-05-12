@@ -1,0 +1,2 @@
+This skill is provided for use within your VS Code customization workflow.
+You may modify and redistribute it within your projects.
