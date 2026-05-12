@@ -2,4 +2,6 @@ env/
 __pycache__/
 *.pyc
 events.db
+events.db-shm
+events.db-wal
 chroma_db/
