@@ -11,7 +11,7 @@ from model_cache import get_embedding_function
 from ollama_client import generate_ollama
 from os_controller import OSController
 from permissions import load_permissions
-from semantic_query import load_collection, search_sessions
+from semantic_query import search_sessions
 import pystray
 from PIL import Image
 
@@ -19,7 +19,6 @@ LOGGER = logging.getLogger("viernes.interactive")
 
 _model = None
 _controller = None
-_collection = None
 _whisper_model = None
 _tts_engine = None
 _icon = None
@@ -72,29 +71,22 @@ def setup_systray():
 
 
 def load_models():
-    global _model, _controller, _collection, _whisper_model, _tts_engine
+    global _model, _controller, _whisper_model, _tts_engine
 
-    LOGGER.info("Cargando modelos...")
-
-    get_embedding_function("all-MiniLM-L6-v2")
-    LOGGER.info("Embedding model loaded")
+    LOGGER.info("Cargando modelos (usa Ollama, es más rápido)...")
 
     _controller = OSController(permissions=load_permissions())
     LOGGER.info("OS Controller listo")
 
-    _collection = load_collection(
-        chroma_path="chroma_db",
-        collection_name="viernes_sessions",
-        embedding_model="all-MiniLM-L6-v2"
-    )
-    LOGGER.info("ChromaDB collection lista")
-
     try:
-        import whisper
-        _whisper_model = whisper.load_model("small")
-        LOGGER.info("Whisper loaded")
+        import pyttsx3
+        _tts_engine = pyttsx3.init()
+        _tts_engine.setProperty("rate", 150)
+        LOGGER.info("TTS listo")
     except Exception as e:
-        LOGGER.warning(f"No se pudo cargar whisper: {e}")
+        LOGGER.warning(f"No se pudo cargar TTS: {e}")
+
+    LOGGER.info("Modelos listos! (Whisper se carga solo cuando usas 'voz')")
 
     try:
         import pyttsx3
@@ -118,13 +110,20 @@ def speak(text: str):
 
 
 def listen_voice() -> Optional[str]:
-    if not _whisper_model:
-        LOGGER.warning("Whisper no cargado")
-        return None
+    global _whisper_model
+
+    if _whisper_model is None:
+        LOGGER.info("Cargando Whisper (solo cuando se necesita)...")
+        try:
+            import whisper
+            _whisper_model = whisper.load_model("small")
+            LOGGER.info("Whisper listo")
+        except Exception as e:
+            LOGGER.error(f"Error cargando Whisper: {e}")
+            return None
 
     try:
         import pyaudio
-        import whisper
         import numpy as np
 
         audio = pyaudio.PyAudio()
@@ -158,19 +157,20 @@ def listen_voice() -> Optional[str]:
 def process_command(user_input: str) -> str:
     LOGGER.info(f"Procesando: {user_input}")
 
-    matches = search_sessions(
-        collection=_collection,
-        query_text=user_input,
-        n_results=3
-    )
-
-    context_lines = []
-    for i, item in enumerate(matches, start=1):
-        metadata = item.get("metadata") or {}
-        start_ts = metadata.get("start_ts", "N/A")
-        context_lines.append(f"[Sesion {i}] {start_ts}: {item.get('document', '')[:100]}")
-
-    context = "\n".join(context_lines) if context_lines else "Sin contexto relevante."
+    context = "Sin historial reciente."
+    try:
+        import sqlite3
+        conn = sqlite3.connect("events.db")
+        cursor = conn.execute(
+            "SELECT app_name, event_type, value, timestamp FROM events ORDER BY timestamp DESC LIMIT 10"
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        if rows:
+            apps = list(set([r[0] for r in rows if r[0]]))
+            context = f"Actividad reciente: {', '.join(apps[:5])}"
+    except Exception as e:
+        LOGGER.warning(f"No se pudo leer historial: {e}")
 
     prompt = (
         "Eres Viernes, asistente personal local. Analiza si el usuario quiere ejecutar una acción o hacer una pregunta.\n"
@@ -240,8 +240,31 @@ def interactive_loop():
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Viernes Interactivo")
+    parser.add_argument("--cmd", type=str, help="Ejecutar un comando directamente")
+    parser.add_argument("--voice", action="store_true", help="Activar modo voz")
+    args = parser.parse_args()
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(message)s"
     )
-    interactive_loop()
+
+    if args.cmd:
+        load_models()
+        response = process_command(args.cmd)
+        print(f"Viernes: {response}")
+        speak(response)
+    elif args.voice:
+        load_models()
+        print("🎤 Hablá ahora...")
+        text = listen_voice()
+        if text:
+            print(f"Escuché: {text}")
+            response = process_command(text)
+            print(f"Viernes: {response}")
+            speak(response)
+    else:
+        interactive_loop()
