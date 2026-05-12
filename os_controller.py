@@ -41,10 +41,16 @@ class OSController:
         if not self.permissions.is_app_allowed(app):
             raise PermissionError(f"App fuera de whitelist: {app}")
 
-        command = [app]
-        if file_arg is not None:
-            command.append(file_arg)
-        subprocess.Popen(command)
+        import platform
+        if platform.system() == "Windows":
+            app_with_ext = f"{app}.exe" if not app.endswith(".exe") else app
+            command = ["start", "", app_with_ext]
+            subprocess.run(command, shell=True)
+        else:
+            command = [app]
+            if file_arg is not None:
+                command.append(file_arg)
+            subprocess.Popen(command)
         return {"status": "ok", "message": f"Aplicacion abierta: {app}"}
 
     def copy_file(self, src: str, dst: str) -> dict[str, str]:

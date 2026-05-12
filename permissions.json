@@ -4,12 +4,17 @@
     "code",
     "msedge",
     "chrome",
-    "explorer"
+    "explorer",
+    "whatsapp",
+    "discord",
+    "telegram",
+    "slack"
   ],
   "allowed_directories": [
     "C:\\Users\\USUARIO\\AppData\\Local\\Programs\\Microsoft VS Code\\viernes-ai",
     "C:\\Users\\USUARIO\\Documents",
-    "C:\\Users\\USUARIO\\Downloads"
+    "C:\\Users\\USUARIO\\Downloads",
+    "C:\\Users\\USUARIO\\Desktop"
   ],
   "allowed_email_recipients": [],
   "allowed_browser_domains": [
