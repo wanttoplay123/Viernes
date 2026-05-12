@@ -213,3 +213,11 @@ class OSController:
 
         raise ValueError(f"Accion no soportada: {action}")
 
+    def open_url(self, url: str) -> dict[str, str]:
+        import platform
+        if platform.system() == "Windows":
+            subprocess.run(["start", "", url], shell=True)
+        else:
+            subprocess.run(["xdg-open", url])
+        return {"status": "ok", "message": f"Abierto: {url}"}
+
