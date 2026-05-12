@@ -6,8 +6,8 @@ from typing import Any
 
 import chromadb
 from chromadb.api.models.Collection import Collection
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 from ollama_client import generate_ollama
+from model_cache import get_embedding_function
 
 
 LOGGER = logging.getLogger("viernes.phase2.semantic_query")
@@ -19,7 +19,7 @@ def load_collection(
     embedding_model: str,
 ) -> Collection:
     client = chromadb.PersistentClient(path=chroma_path)
-    embedding_fn = SentenceTransformerEmbeddingFunction(model_name=embedding_model)
+    embedding_fn = get_embedding_function(model_name=embedding_model)
     return client.get_or_create_collection(
         name=collection_name,
         embedding_function=embedding_fn,

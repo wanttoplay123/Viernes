@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import chromadb
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from model_cache import get_embedding_function
 
 
 LOGGER = logging.getLogger("viernes.phase2.indexer")
@@ -70,9 +70,7 @@ class SemanticMemoryIndexer:
         self._ensure_tables()
         self._ensure_events_table()
 
-        self.embedding_fn = SentenceTransformerEmbeddingFunction(
-            model_name=embedding_model
-        )
+        self.embedding_fn = get_embedding_function(model_name=embedding_model)
         self.chroma_client = chromadb.PersistentClient(path=str(self.chroma_path))
         self.collection = self.chroma_client.get_or_create_collection(
             name=self.collection_name,
